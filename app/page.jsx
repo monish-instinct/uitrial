@@ -1,5 +1,4 @@
-"use client"
-
+"use client";
 import * as React from "react"
 import {
   Moon,
@@ -123,11 +122,31 @@ function DashboardLayout({
 }) {
   const [isCollapsed, setIsCollapsed] = React.useState(false)
   const { setTheme, theme } = useTheme()
+  const [recentItems, setRecentItems] = React.useState([])
+
+  const addRecentItem = (item) => {
+    // Check if the item already exists in recentItems
+    const itemExists = recentItems.some(recentItem => recentItem.label === item.label);
+
+    // If it doesn't exist, add it
+    if (!itemExists) {
+      const newRecentItem = {
+        icon: item.icon,
+        label: item.label, // Remove "Accessed" prefix
+        timestamp: new Date(),
+      }
+      setRecentItems((prevItems) => [newRecentItem, ...prevItems.slice(0, 2)]);
+    }
+  }
 
   return (
     (<div
       className="flex h-screen bg-background transition-colors duration-300 ease-in-out">
-      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+      <Sidebar
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
+        recentItems={recentItems}
+        addRecentItem={addRecentItem} />
       <main className="flex-1 overflow-y-auto p-8">
         <nav className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-bold">Dashboard</h1>
@@ -141,7 +160,9 @@ function DashboardLayout({
 
 function Sidebar({
   isCollapsed,
-  setIsCollapsed
+  setIsCollapsed,
+  recentItems,
+  addRecentItem
 }) {
   return (
     (<aside
@@ -159,9 +180,9 @@ function Sidebar({
       <Separator />
       <ProfileSection isCollapsed={isCollapsed} />
       <Separator />
-      <QuickAccessMenu isCollapsed={isCollapsed} />
+      <QuickAccessMenu isCollapsed={isCollapsed} addRecentItem={addRecentItem} />
       <Separator />
-      <RecentsSection isCollapsed={isCollapsed} />
+      <RecentsSection isCollapsed={isCollapsed} recentItems={recentItems} />
       <Separator />
       <SyncStatus isCollapsed={isCollapsed} />
     </aside>)
@@ -200,7 +221,8 @@ function ProfileSection({
 }
 
 function QuickAccessMenu({
-  isCollapsed
+  isCollapsed,
+  addRecentItem
 }) {
   const menuItems = [
     { icon: Brain, label: "Artificial Intelligence" },
@@ -223,7 +245,8 @@ function QuickAccessMenu({
                 <li>
                   <Button
                     variant="ghost"
-                    className={cn("w-full justify-start", isCollapsed && "justify-center p-2")}>
+                    className={cn("w-full justify-start", isCollapsed && "justify-center p-2")}
+                    onClick={() => addRecentItem(item)}>
                     <item.icon className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
                     {!isCollapsed && <span>{item.label}</span>}
                   </Button>
@@ -239,14 +262,9 @@ function QuickAccessMenu({
 }
 
 function RecentsSection({
-  isCollapsed
+  isCollapsed,
+  recentItems
 }) {
-  const recentItems = [
-    { icon: Search, label: "Searched for 'AI trends'", timestamp: "2 mins ago" },
-    { icon: Palette, label: "Created new design", timestamp: "1 hour ago" },
-    { icon: Database, label: "Data transfer completed", timestamp: "3 hours ago" },
-  ]
-
   return (
     (<div className="p-4">
       <h3 className={cn("font-semibold mb-2", isCollapsed && "sr-only")}>Recents</h3>
@@ -260,7 +278,7 @@ function RecentsSection({
                   {!isCollapsed && (
                     <>
                       <span className="flex-1 truncate">{item.label}</span>
-                      <span className="text-xs text-muted-foreground">{item.timestamp}</span>
+                      <span className="text-xs text-muted-foreground">{formatRelativeTime(item.timestamp)}</span>
                     </>
                   )}
                 </li>
@@ -268,7 +286,7 @@ function RecentsSection({
               {isCollapsed && (
                 <TooltipContent side="right">
                   <p>{item.label}</p>
-                  <p className="text-xs text-muted-foreground">{item.timestamp}</p>
+                  <p className="text-xs text-muted-foreground">{formatRelativeTime(item.timestamp)}</p>
                 </TooltipContent>
               )}
             </Tooltip>
@@ -320,5 +338,23 @@ function ModeToggle() {
       </DropdownMenuContent>
     </DropdownMenu>)
   );
+}
+
+function formatRelativeTime(date) {
+  const now = new Date()
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+  if (diffInSeconds < 60) {
+    return `${diffInSeconds} seconds ago`
+  } else if (diffInSeconds < 3600) {
+    const minutes = Math.floor(diffInSeconds / 60)
+    return `${minutes} minute${minutes > 1 ? "s" : ""} ago`
+  } else if (diffInSeconds < 86400) {
+    const hours = Math.floor(diffInSeconds / 3600)
+    return `${hours} hour${hours > 1 ? "s" : ""} ago`
+  } else {
+    const days = Math.floor(diffInSeconds / 86400)
+    return `${days} day${days > 1 ? "s" : ""} ago`
+  }
 }
 
