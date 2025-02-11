@@ -212,7 +212,7 @@ function ProfileSection({
             <Users className="mr-2 h-4 w-4" /> Other Accounts
           </Button>
           <Button variant="outline" className="w-full">
-            <Zap className="mr-2 h-4 w-4" /> SkyNet Suggestions
+            <Zap className="mr-2 h-4 w-4" /> Skynet Suggestions
           </Button>
         </>
       )}
